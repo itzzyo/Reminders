@@ -1,0 +1,2104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reminders</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 814 1000'><path fill='black' d='M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.4-150.3-109.2c-52.6-77.8-96.6-197.1-96.6-311.1 0-178.3 116.5-272.6 231.2-272.6 62.1 0 113.8 41.3 153.3 41.3 37.6 0 96.9-43.6 167.4-43.6 26.9 0 109.2 2.6 168.6 80.4zm-244.7-182.5c31.6-37.6 54.8-90.5 54.8-143.5 0-7.7-.6-15.4-1.9-21.7-51.9 2-113.8 34.5-151.4 78.1-29 33.1-56.5 86-56.5 139.6 0 8.3 1.3 16.6 1.9 19.2 3.2.6 8.4 1.3 13.6 1.3 46.8 0 103.7-31 139.5-73z'/></svg>">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&display=swap');
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #f2f2f7;
+            --sidebar-bg: #e8e8ed;
+            --card-bg: #ffffff;
+            --text: #1c1c1e;
+            --subtext: #8e8e93;
+            --border: rgba(60, 60, 67, 0.12);
+            --accent: #007aff;
+            --red: #ff3b30;
+            --orange: #ff9500;
+            --green: #34c759;
+            --purple: #af52de;
+            --blue: #007aff;
+            --pink: #ff2d55;
+            --teal: #5ac8fa;
+            --sidebar-w: 260px;
+            --radius: 12px;
+            --font: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+        }
+
+        body.dark {
+            --bg: #000000;
+            --sidebar-bg: #1c1c1e;
+            --card-bg: #2c2c2e;
+            --text: #ffffff;
+            --subtext: #8e8e93;
+            --border: rgba(255, 255, 255, 0.10);
+        }
+
+        body,
+        .sidebar,
+        .main,
+        .smart-card,
+        .reminder-card,
+        .modal,
+        .modal-field,
+        .search-bar input,
+        .add-reminder-row input {
+            transition: background .25s ease, color .25s ease, border-color .25s ease;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            padding: 16px 12px;
+            gap: 6px;
+            border-right: 1px solid var(--border);
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+            padding: 8px 8px 12px;
+            letter-spacing: -0.3px;
+        }
+
+        .smart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .smart-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 12px 12px 10px;
+            cursor: pointer;
+            transition: opacity .15s;
+            position: relative;
+        }
+
+        .smart-card:hover {
+            opacity: .85;
+        }
+
+        .smart-card:active {
+            opacity: .7;
+        }
+
+        .smart-card .icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .smart-card .count {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .smart-card .label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--subtext);
+        }
+
+        .section-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--subtext);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            padding: 6px 8px 4px;
+            margin-top: 6px;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background .1s;
+            position: relative;
+        }
+
+        .list-item:hover {
+            background: rgba(0, 0, 0, .06);
+        }
+
+        .list-item.active {
+            background: rgba(0, 122, 255, .12);
+        }
+
+        .list-item.active .list-name {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .list-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .list-name {
+            font-size: 15px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .list-count {
+            font-size: 14px;
+            color: var(--subtext);
+            font-weight: 500;
+        }
+
+        .add-list-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--accent);
+            font-size: 15px;
+            font-weight: 500;
+            margin-top: 4px;
+            transition: background .1s;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .add-list-btn:hover {
+            background: rgba(0, 122, 255, .08);
+        }
+
+        .add-list-btn .plus {
+            font-size: 20px;
+            font-weight: 300;
+            line-height: 1;
+        }
+
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .main-header {
+            padding: 20px 28px 0;
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+        }
+
+        .list-header-title {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            line-height: 1;
+        }
+
+        .main-toolbar {
+            padding: 12px 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-bar {
+            flex: 1;
+            background: rgba(118, 118, 128, .12);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+        }
+
+        .search-bar input {
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 15px;
+            color: var(--text);
+            width: 100%;
+            font-family: var(--font);
+        }
+
+        .search-bar input::placeholder {
+            color: var(--subtext);
+        }
+
+        .search-icon {
+            color: var(--subtext);
+            font-size: 14px;
+        }
+
+        .toolbar-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--accent);
+            font-size: 22px;
+            line-height: 1;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background .1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(0, 122, 255, .1);
+        }
+
+        /* ── REMINDERS LIST ── */
+        .reminders-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 28px 28px;
+        }
+
+        .reminders-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .reminders-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .reminders-scroll::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, .15);
+            border-radius: 3px;
+        }
+
+        .reminder-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 2px;
+        }
+
+        .reminder-row {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px 16px;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+            transition: background .1s;
+            position: relative;
+            cursor: default;
+        }
+
+        .reminder-row:last-child {
+            border-bottom: none;
+        }
+
+        .reminder-row:hover {
+            background: rgba(0, 0, 0, .02);
+        }
+
+        .reminder-row.completed .reminder-text {
+            color: var(--subtext);
+            text-decoration: line-through;
+        }
+
+        .check-btn {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 1px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s, border-color .15s;
+            position: relative;
+        }
+
+        .check-btn.checked {
+            background: var(--green);
+            border-color: var(--green);
+        }
+
+        .check-btn.checked::after {
+            content: '';
+            width: 5px;
+            height: 9px;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            transform: rotate(45deg) translate(-1px, -1px);
+            display: block;
+        }
+
+        .reminder-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .reminder-text {
+            font-size: 15px;
+            font-weight: 400;
+            word-break: break-word;
+            outline: none;
+        }
+
+        .reminder-text:empty::before {
+            content: attr(data-placeholder);
+            color: var(--subtext);
+        }
+
+        .reminder-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+            flex-wrap: wrap;
+        }
+
+        .reminder-meta .tag {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--subtext);
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .reminder-meta .tag.priority-high {
+            color: var(--red);
+        }
+
+        .reminder-meta .tag.priority-med {
+            color: var(--orange);
+        }
+
+        .reminder-meta .tag.priority-low {
+            color: var(--blue);
+        }
+
+        .reminder-actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            opacity: 0;
+            transition: opacity .15s;
+        }
+
+        .reminder-row:hover .reminder-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--subtext);
+            font-size: 16px;
+            padding: 2px 5px;
+            border-radius: 5px;
+            transition: color .1s, background .1s;
+            display: flex;
+            align-items: center;
+        }
+
+        .action-btn:hover {
+            color: var(--text);
+            background: rgba(0, 0, 0, .06);
+        }
+
+        .action-btn.del:hover {
+            color: var(--red);
+        }
+
+        .add-reminder-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            gap: 12px;
+            cursor: text;
+            color: var(--subtext);
+            font-size: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .add-reminder-row .plus-circle {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 22px;
+            font-weight: 300;
+            flex-shrink: 0;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .add-reminder-row input {
+            background: none;
+            border: none;
+            outline: none;
+            font-size: 15px;
+            color: var(--text);
+            font-family: var(--font);
+            width: 100%;
+        }
+
+        .add-reminder-row input::placeholder {
+            color: var(--subtext);
+        }
+
+        /* ── SECTION (completed) ── */
+        .completed-section {
+            margin-top: 18px;
+        }
+
+        .completed-toggle {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--subtext);
+            cursor: pointer;
+            padding: 4px 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: var(--subtext);
+            text-align: center;
+            gap: 8px;
+            padding: 40px;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 52px;
+            margin-bottom: 6px;
+        }
+
+        .empty-state .empty-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .empty-state .empty-sub {
+            font-size: 14px;
+            max-width: 220px;
+        }
+
+        /* ── NEW LIST MODAL ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            width: 320px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+            transform: scale(.95);
+            transition: transform .2s;
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+
+        .modal h2 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .modal-field {
+            background: rgba(118, 118, 128, .12);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 15px;
+            width: 100%;
+            border: none;
+            outline: none;
+            font-family: var(--font);
+            color: var(--text);
+            margin-bottom: 14px;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .color-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: border-color .1s, transform .1s;
+        }
+
+        .color-swatch.selected {
+            border-color: rgba(0, 0, 0, .3);
+            transform: scale(1.15);
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: opacity .1s;
+        }
+
+        .modal-btn:hover {
+            opacity: .85;
+        }
+
+        .modal-btn.cancel {
+            background: rgba(118, 118, 128, .15);
+            color: var(--text);
+        }
+
+        .modal-btn.confirm {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        /* scrollbar */
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, .12);
+            border-radius: 2px;
+        }
+
+        /* ── DARK MODE TOGGLE ── */
+        .top-right {
+            position: fixed;
+            top: 14px;
+            right: 16px;
+            z-index: 220;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 170px;
+            gap: 6px;
+        }
+
+        .dark-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 5px 12px 5px 8px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--subtext);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .10);
+            transition: background .25s, border-color .25s, color .25s, box-shadow .15s;
+        }
+
+        .dark-toggle:hover {
+            box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
+        }
+
+        .dark-toggle:active {
+            transform: scale(.97);
+        }
+
+        .profile-badge {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 5px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--subtext);
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .10);
+            transition: background .25s, border-color .25s, color .25s;
+        }
+
+        .profile-badge:hover {
+            background: rgba(0, 122, 255, .08);
+            color: var(--text);
+        }
+
+        .toggle-track {
+            width: 34px;
+            height: 20px;
+            border-radius: 10px;
+            background: #c7c7cc;
+            position: relative;
+            transition: background .25s;
+            flex-shrink: 0;
+        }
+
+        body.dark .toggle-track {
+            background: var(--accent);
+        }
+
+        .toggle-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform .25s cubic-bezier(.4, 0, .2, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+        }
+
+        body.dark .toggle-thumb {
+            transform: translateX(14px);
+        }
+
+        /* ── SIDEBAR OVERLAY (MOBILE) ── */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .4);
+            z-index: 140;
+        }
+
+        .menu-btn {
+            display: none;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            font-size: 26px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow: visible;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: min(280px, 80vw);
+                height: 100vh;
+                z-index: 150;
+                border-right: 1px solid var(--border);
+                transform: translateX(0);
+                transition: left .25s ease;
+                background: var(--sidebar-bg);
+                box-shadow: 2px 0 14px rgba(0, 0, 0, .25);
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .main {
+                flex: 1;
+                margin-left: 0;
+                padding-top: 48px;
+            }
+
+            .main-header {
+                padding: 12px 14px 8px;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .main-header .list-header-title {
+                font-size: 26px;
+            }
+
+            .main-toolbar {
+                padding: 8px 14px;
+                gap: 6px;
+            }
+
+            .search-bar {
+                min-width: 0;
+            }
+
+            .reminders-scroll {
+                padding: 0 14px 14px;
+            }
+
+            .smart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-title {
+                font-size: 20px;
+                color: var(--text);
+            }
+
+            body.dark .sidebar-title {
+                color: #ffffff;
+            }
+
+            .list-name {
+                font-size: 14px;
+            }
+
+            .reminder-text {
+                font-size: 14px;
+            }
+
+            .add-reminder-row {
+                padding: 8px 12px;
+            }
+
+            .completed-toggle {
+                font-size: 12px;
+            }
+
+            .menu-btn {
+                display: inline-flex;
+            }
+
+            .dark-toggle {
+                top: auto;
+                bottom: 14px;
+                right: 16px;
+            }
+        }
+
+        /* ── LOGIN SCREEN (DARK) ── */
+        .auth-screen {
+            position: fixed;
+            inset: 0;
+            background: rgba(8, 10, 18, 0.90);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            color: #fff;
+            /* ensures dark login overlay text is readable */
+        }
+
+        .auth-screen .auth-input {
+            color: #fff;
+            /* avoid black input text on dark auth background */
+        }
+
+        .auth-container {
+            background: #10121a;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, .6);
+        }
+
+        .auth-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-align: center;
+            color: #f0f2ff;
+        }
+
+        .auth-subtitle {
+            font-size: 13px;
+            color: rgba(235, 235, 245, .75);
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            background: rgba(255, 255, 255, .09);
+            border: 1px solid rgba(255, 255, 255, .22);
+            border-radius: 10px;
+            font-size: 15px;
+            color: #fff;
+            font-family: var(--font);
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        .auth-input:focus {
+            border-color: #4f6afd;
+        }
+
+        .auth-input::placeholder {
+            color: rgba(255, 255, 255, .64);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 12px;
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 8px 15px rgba(4, 57, 175, .25);
+            transition: transform .2s, background .2s;
+        }
+
+        .auth-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .auth-btn:active {
+            transform: translateY(0);
+        }
+
+        .auth-toggle button {
+            color: #7aa7ff;
+        }
+
+        .auth-subtitle {
+            font-size: 13px;
+            color: var(--subtext);
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            background: rgba(118, 118, 128, .12);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            color: var(--text);
+            font-family: var(--font);
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        .auth-input:focus {
+            border-color: var(--accent);
+        }
+
+        .auth-input::placeholder {
+            color: var(--subtext);
+        }
+
+        .auth-password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .auth-password-wrapper input {
+            flex: 1;
+            margin: 0;
+        }
+
+        .auth-password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--subtext);
+            font-size: 20px;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color .2s;
+        }
+
+        .auth-password-toggle-btn:hover {
+            color: var(--text);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity .1s;
+            margin-bottom: 12px;
+            font-family: var(--font);
+        }
+
+        .auth-btn:hover {
+            opacity: .9;
+        }
+
+        .auth-btn:active {
+            opacity: .8;
+        }
+
+        .auth-toggle {
+            text-align: center;
+            font-size: 13px;
+            color: var(--subtext);
+        }
+
+        .auth-toggle button {
+            background: none;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            font-weight: 600;
+            font-family: var(--font);
+        }
+
+        .auth-error {
+            padding: 10px 12px;
+            background: rgba(255, 59, 48, .1);
+            color: var(--red);
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+
+        .auth-loading {
+            opacity: .6;
+            pointer-events: none;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--subtext);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: color .1s, background .1s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(0, 0, 0, .06);
+            color: var(--text);
+        }
+
+        .profile-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--subtext);
+            padding: 3px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .profile-btn:hover {
+            background: rgba(0, 122, 255, .1);
+            color: var(--text);
+        }
+
+        .profile-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .35);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+        }
+
+        .profile-modal.show {
+            display: flex;
+        }
+
+        .profile-panel {
+            background: var(--card-bg);
+            border-radius: 16px;
+            width: min(90%, 360px);
+            padding: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, .25);
+        }
+
+        .profile-panel h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: var(--text);
+        }
+
+        .profile-panel .profile-field {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(118, 118, 128, .12);
+            color: var(--text);
+        }
+
+        .profile-panel .profile-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .profile-panel .profile-action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-family: var(--font);
+            cursor: pointer;
+        }
+
+        .profile-panel .save-btn {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .profile-panel .cancel-btn {
+            background: rgba(118, 118, 128, .15);
+            color: var(--text);
+        }
+
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .password-wrapper input {
+            flex: 1;
+            margin: 0;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--subtext);
+            font-size: 18px;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle-btn:hover {
+            color: var(--text);
+        }
+
+        .profile-panel .logout-btn {
+            background: var(--red);
+            color: #fff;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="auth-screen">
+        <div class="auth-container">
+            <div class="auth-title">Reminders</div>
+            <div class="auth-subtitle">Sign in to sync across devices</div>
+            <div id="auth-error" class="auth-error" style="display: none;"></div>
+            <input id="auth-email" class="auth-input" type="email" placeholder="Email" />
+            <div class="auth-password-wrapper">
+                <input id="auth-password" class="auth-input" type="password" placeholder="Password" />
+                <button type="button" class="auth-password-toggle-btn" id="auth-password-toggle"
+                    onclick="togglePasswordVisibility('auth-password')">👁️</button>
+            </div>
+            <button id="auth-submit-btn" class="auth-btn" onclick="handleAuthSubmit()">Sign In</button>
+            <div class="auth-toggle">
+                Don't have an account? <button onclick="toggleAuthMode()">Sign Up</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="profile-modal" class="profile-modal" onclick="if (event.target===this) closeProfileModal()">
+        <div class="profile-panel">
+            <h3>Profile</h3>
+            <input id="profile-name" class="profile-field" type="text" placeholder="Full name" />
+            <input id="profile-dob" class="profile-field" type="date" placeholder="Date of birth" />
+            <div id="profile-dob-hint" style="font-size:12px;color:var(--subtext);margin-bottom:10px;">No DOB set</div>
+            <div class="password-wrapper">
+                <input id="profile-password" class="profile-field" type="password"
+                    placeholder="New password (leave blank to keep current)" />
+                <button type="button" class="password-toggle-btn"
+                    onclick="togglePasswordVisibility('profile-password')">👁️</button>
+            </div>
+            <div class="password-wrapper">
+                <input id="profile-password-confirm" class="profile-field" type="password"
+                    placeholder="Confirm new password" />
+                <button type="button" class="password-toggle-btn"
+                    onclick="togglePasswordVisibility('profile-password-confirm')">👁️</button>
+            </div>
+            <div style="font-size:12px;color:var(--subtext);margin-bottom:10px;">Email is read-only</div>
+            <input id="profile-email" class="profile-field" type="email" readonly />
+            <div class="profile-actions">
+                <button class="profile-action-btn cancel-btn" onclick="closeProfileModal()">Cancel</button>
+                <button class="profile-action-btn save-btn" onclick="saveProfile()">Save</button>
+                <button class="profile-action-btn logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <div class="top-right">
+        <button class="dark-toggle" onclick="toggleDark()" id="dark-toggle-btn">
+            <div class="toggle-track">
+                <div class="toggle-thumb"></div>
+            </div>
+            <span id="dark-label">Dark</span>
+        </button>
+
+        <button class="profile-badge" onclick="openProfileModal()" id="my-profile-badge" style="display:none;">
+            My Profile
+        </button>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-title">Reminders</div>
+
+        <!-- Smart Lists -->
+        <div class="smart-grid">
+            <div class="smart-card" onclick="setView('today')" id="card-today">
+                <div class="icon" style="background:#fff3e0">📅</div>
+                <div class="count" id="count-today" style="color:var(--blue)">0</div>
+                <div class="label">Today</div>
+            </div>
+            <div class="smart-card" onclick="setView('scheduled')" id="card-scheduled">
+                <div class="icon" style="background:#e3f2fd">🗓</div>
+                <div class="count" id="count-scheduled" style="color:var(--blue)">0</div>
+                <div class="label">Scheduled</div>
+            </div>
+            <div class="smart-card" onclick="setView('all')" id="card-all">
+                <div class="icon" style="background:#fce4ec">📋</div>
+                <div class="count" id="count-all" style="color:var(--text)">0</div>
+                <div class="label">All</div>
+            </div>
+            <div class="smart-card" onclick="setView('flagged')" id="card-flagged">
+                <div class="icon" style="background:#fff8e1">🚩</div>
+                <div class="count" id="count-flagged" style="color:var(--orange)">0</div>
+                <div class="label">Flagged</div>
+            </div>
+        </div>
+
+        <div class="section-label">My Lists</div>
+        <div id="lists-container"></div>
+
+        <button class="add-list-btn" onclick="openModal()">
+            <span class="plus">+</span> Add List
+        </button>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+        <div class="main-header">
+            <button class="menu-btn" onclick="toggleSidebar()" aria-label="Open sidebar">☰</button>
+            <div class="list-header-title" id="main-title" style="color:var(--blue)">All</div>
+        </div>
+        <div class="main-toolbar">
+            <div class="search-bar">
+                <span class="search-icon">🔍</span>
+                <input id="search-input" type="text" placeholder="Search" oninput="renderMain()" />
+            </div>
+            <button class="toolbar-btn" title="Sort" onclick="toggleSort()">⋮</button>
+        </div>
+        <div class="reminders-scroll" id="reminders-area"></div>
+    </main>
+
+    <!-- NEW LIST MODAL -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <h2>New List</h2>
+            <input class="modal-field" id="modal-name" type="text" placeholder="List Name" />
+            <div class="color-picker" id="color-picker"></div>
+            <div style="font-size:13px;color:var(--subtext);margin-bottom:12px;text-align:center">Icon</div>
+            <div class="color-picker" id="icon-picker" style="font-size:20px;gap:10px;"></div>
+            <br />
+            <div class="modal-btns">
+                <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn confirm" onclick="createList()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── API & AUTH ──
+        const DEFAULT_API_HOST = 'http://192.168.1.104:5000';
+        const API_BASE = (window.location.protocol.startsWith('http')
+            ? window.location.origin
+            : DEFAULT_API_HOST) + '/api';
+        console.log('Using API_BASE', API_BASE);
+        let authToken = localStorage.getItem('authToken');
+        let userEmail = localStorage.getItem('userEmail');
+        let authMode = 'login'; // 'login' or 'signup'
+
+        // ── STATE ──
+        const COLORS = ['#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#007aff', '#5856d6', '#af52de', '#ff2d55', '#5ac8fa', '#8e8e93'];
+        const ICONS = ['📋', '🏠', '💼', '🎯', '🛒', '📚', '💡', '✈️', '🏋️', '🎨'];
+
+        let state = {
+            lists: [
+                { id: 'reminders', name: 'Reminders', color: '#007aff', icon: '📋', reminders: [] }
+            ],
+            currentView: 'all',  // 'all' | 'today' | 'scheduled' | 'flagged' | list id
+            newListColor: COLORS[4],
+            newListIcon: ICONS[0],
+            showCompleted: false,
+            sortAsc: true,
+        };
+
+        // ── HELPERS ──
+        function allReminders() {
+            return state.lists.flatMap(l => l.reminders.map(r => ({ ...r, listId: l.id, listColor: l.color })));
+        }
+        function isToday(dateStr) {
+            if (!dateStr) return false;
+            const d = new Date(dateStr); const t = new Date();
+            return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate();
+        }
+        function isFuture(dateStr) {
+            if (!dateStr) return false;
+            return new Date(dateStr) > new Date();
+        }
+        function viewReminders() {
+            const q = document.getElementById('search-input').value.toLowerCase();
+            let rem;
+            if (state.currentView === 'all') rem = allReminders();
+            else if (state.currentView === 'today') rem = allReminders().filter(r => isToday(r.date));
+            else if (state.currentView === 'scheduled') rem = allReminders().filter(r => r.date);
+            else if (state.currentView === 'flagged') rem = allReminders().filter(r => r.flagged);
+            else rem = (state.lists.find(l => l.id === state.currentView)?.reminders || []).map(r => ({ ...r }));
+            if (q) rem = rem.filter(r => r.text.toLowerCase().includes(q));
+            return rem;
+        }
+        function getList(id) { return state.lists.find(l => l.id === id); }
+        function getListForReminder(remId) { return state.lists.find(l => l.reminders.find(r => r.id === remId)); }
+
+        // ── COUNTS ──
+        function updateCounts() {
+            const all = allReminders().filter(r => !r.completed);
+            document.getElementById('count-all').textContent = all.length;
+            document.getElementById('count-today').textContent = all.filter(r => isToday(r.date)).length;
+            document.getElementById('count-scheduled').textContent = all.filter(r => r.date).length;
+            document.getElementById('count-flagged').textContent = all.filter(r => r.flagged).length;
+        }
+
+        // ── SIDEBAR LISTS ──
+        function renderSidebar() {
+            const cont = document.getElementById('lists-container');
+            cont.innerHTML = '';
+            state.lists.forEach(list => {
+                const count = list.reminders.filter(r => !r.completed).length;
+                const active = state.currentView === list.id;
+                const el = document.createElement('div');
+                el.className = 'list-item' + (active ? ' active' : '');
+                el.innerHTML = `
+      <div class="list-dot" style="background:${list.color}20;color:${list.color}">${list.icon}</div>
+      <span class="list-name">${escHtml(list.name)}</span>
+      ${count > 0 ? `<span class="list-count">${count}</span>` : ''}
+    `;
+                el.onclick = () => setView(list.id);
+                cont.appendChild(el);
+            });
+            updateCounts();
+        }
+
+        // ── MAIN AREA ──
+        function renderMain() {
+            const area = document.getElementById('reminders-area');
+            const title = document.getElementById('main-title');
+
+            // Set title + color
+            const views = {
+                all: { label: 'All', color: 'var(--text)' },
+                today: { label: 'Today', color: 'var(--blue)' },
+                scheduled: { label: 'Scheduled', color: 'var(--blue)' },
+                flagged: { label: 'Flagged', color: 'var(--orange)' },
+            };
+            if (views[state.currentView]) {
+                title.textContent = views[state.currentView].label;
+                title.style.color = views[state.currentView].color;
+            } else {
+                const list = getList(state.currentView);
+                title.textContent = list ? list.name : '';
+                title.style.color = list ? list.color : 'var(--text)';
+            }
+
+            const rem = viewReminders();
+            const active = rem.filter(r => !r.completed);
+            const completed = rem.filter(r => r.completed);
+
+            area.innerHTML = '';
+
+            if (active.length === 0 && completed.length === 0) {
+                area.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">✅</div>
+      <div class="empty-title">No Reminders</div>
+      <div class="empty-sub">Tap below to add a new reminder.</div>
+    </div>`;
+            }
+
+            if (active.length > 0) {
+                const card = document.createElement('div');
+                card.className = 'reminder-card';
+                active.forEach(r => card.appendChild(makeRow(r)));
+                // Add reminder row (only for list views)
+                if (!['all', 'today', 'scheduled', 'flagged'].includes(state.currentView)) {
+                    const addRow = makeAddRow();
+                    card.appendChild(addRow);
+                }
+                area.appendChild(card);
+            } else if (!['all', 'today', 'scheduled', 'flagged'].includes(state.currentView)) {
+                const card = document.createElement('div');
+                card.className = 'reminder-card';
+                card.appendChild(makeAddRow());
+                area.appendChild(card);
+            }
+
+            // Add button for smart views
+            if (['all', 'today', 'scheduled', 'flagged'].includes(state.currentView) && active.length > 0) {
+                // no add row in smart views
+            }
+
+            if (completed.length > 0) {
+                const sec = document.createElement('div');
+                sec.className = 'completed-section';
+                const toggle = document.createElement('div');
+                toggle.className = 'completed-toggle';
+                toggle.innerHTML = `<span>${state.showCompleted ? '▾' : '▸'}</span> Completed (${completed.length})`;
+                toggle.onclick = () => { state.showCompleted = !state.showCompleted; renderMain(); };
+                sec.appendChild(toggle);
+                if (state.showCompleted) {
+                    const card = document.createElement('div');
+                    card.className = 'reminder-card';
+                    completed.forEach(r => card.appendChild(makeRow(r)));
+                    sec.appendChild(card);
+                }
+                area.appendChild(sec);
+            }
+        }
+
+        function makeRow(r) {
+            const list = getListForReminder(r.id);
+            const color = list ? list.color : 'var(--green)';
+
+            const row = document.createElement('div');
+            row.className = 'reminder-row' + (r.completed ? ' completed' : '');
+            row.dataset.id = r.id;
+
+            const check = document.createElement('button');
+            check.className = 'check-btn' + (r.completed ? ' checked' : '');
+            check.style.borderColor = r.completed ? 'var(--green)' : color;
+            check.onclick = () => toggleComplete(r.id);
+
+            const body = document.createElement('div');
+            body.className = 'reminder-body';
+
+            const text = document.createElement('div');
+            text.className = 'reminder-text';
+            text.contentEditable = 'true';
+            text.setAttribute('data-placeholder', 'New Reminder');
+            text.textContent = r.text;
+            text.addEventListener('input', () => updateText(r.id, text.textContent));
+            text.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); focusAddRow(); } });
+
+            const meta = document.createElement('div');
+            meta.className = 'reminder-meta';
+            if (r.date) {
+                const d = new Date(r.date);
+                meta.innerHTML += `<span class="tag">📅 ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
+            }
+            if (r.flagged) meta.innerHTML += `<span class="tag" style="color:var(--orange)">🚩</span>`;
+            if (r.priority === 'high') meta.innerHTML += `<span class="tag priority-high">!!! High</span>`;
+            if (r.priority === 'med') meta.innerHTML += `<span class="tag priority-med">!! Medium</span>`;
+            if (r.priority === 'low') meta.innerHTML += `<span class="tag priority-low">! Low</span>`;
+
+            body.appendChild(text);
+            if (meta.innerHTML) body.appendChild(meta);
+
+            const actions = document.createElement('div');
+            actions.className = 'reminder-actions';
+            actions.innerHTML = `
+    <button class="action-btn" title="${r.flagged ? 'Unflag' : 'Flag'}" onclick="toggleFlag('${r.id}')">🚩</button>
+    <button class="action-btn" title="Set date" onclick="promptDate('${r.id}')">📅</button>
+    <button class="action-btn del" title="Delete" onclick="deleteReminder('${r.id}')">🗑</button>
+  `;
+
+            row.appendChild(check);
+            row.appendChild(body);
+            row.appendChild(actions);
+            return row;
+        }
+
+        function makeAddRow() {
+            const row = document.createElement('div');
+            row.className = 'add-reminder-row';
+            row.id = 'add-reminder-row';
+            const plus = document.createElement('button');
+            plus.className = 'plus-circle';
+            plus.textContent = '+';
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.id = 'new-reminder-input';
+            inp.placeholder = 'New Reminder';
+            inp.addEventListener('keydown', e => {
+                if (e.key === 'Enter') { addReminder(inp.value); inp.value = ''; }
+            });
+            plus.onclick = () => { addReminder(inp.value); inp.value = ''; };
+            row.appendChild(plus);
+            row.appendChild(inp);
+            row.onclick = () => inp.focus();
+            return row;
+        }
+
+        function focusAddRow() {
+            const inp = document.getElementById('new-reminder-input');
+            if (inp) inp.focus();
+        }
+
+        // ── ACTIONS ──
+        function setView(view) {
+            state.currentView = view;
+            renderSidebar();
+            renderMain();
+            if (window.matchMedia('(max-width: 900px)').matches) {
+                closeSidebar();
+            }
+        }
+
+        function addReminder(text) {
+            text = text.trim();
+            if (!text) return;
+            const listId = ['all', 'today', 'scheduled', 'flagged'].includes(state.currentView)
+                ? (state.lists[0]?.id || null)
+                : state.currentView;
+            if (!listId) return;
+            const list = getList(listId);
+            if (!list) return;
+            list.reminders.push({ id: uid(), text, completed: false, flagged: false, date: null, priority: null });
+            renderSidebar();
+            renderMain();
+            syncDataToServer();
+            setTimeout(() => {
+                const inp = document.getElementById('new-reminder-input');
+                if (inp) inp.focus();
+            }, 0);
+        }
+
+        function toggleComplete(id) {
+            const list = getListForReminder(id);
+            if (!list) return;
+            const r = list.reminders.find(r => r.id === id);
+            if (r) r.completed = !r.completed;
+            renderSidebar();
+            renderMain();
+            syncDataToServer();
+        }
+
+        function toggleFlag(id) {
+            const list = getListForReminder(id);
+            if (!list) return;
+            const r = list.reminders.find(r => r.id === id);
+            if (r) r.flagged = !r.flagged;
+            renderSidebar();
+            renderMain();
+            syncDataToServer();
+        }
+
+        function deleteReminder(id) {
+            state.lists.forEach(l => {
+                l.reminders = l.reminders.filter(r => r.id !== id);
+            });
+            renderSidebar();
+            renderMain();
+            syncDataToServer();
+        }
+
+        function updateText(id, txt) {
+            const list = getListForReminder(id);
+            if (!list) return;
+            const r = list.reminders.find(r => r.id === id);
+            if (r) r.text = txt;
+            updateCounts();
+            syncDataToServer();
+        }
+
+        function promptDate(id) {
+            const list = getListForReminder(id);
+            if (!list) return;
+            const r = list.reminders.find(r => r.id === id);
+            if (!r) return;
+            const val = prompt('Set date (YYYY-MM-DD) or leave empty to clear:', r.date || '');
+            if (val === null) return;
+            r.date = val.trim() || null;
+            renderSidebar();
+            renderMain();
+            syncDataToServer();
+        }
+
+        function toggleSort() {
+            state.sortAsc = !state.sortAsc;
+            state.lists.forEach(l => {
+                l.reminders.sort((a, b) => state.sortAsc
+                    ? a.text.localeCompare(b.text)
+                    : b.text.localeCompare(a.text));
+            });
+            renderMain();
+        }
+
+        // ── NEW LIST MODAL ──
+        function openModal() {
+            document.getElementById('modal-name').value = '';
+            state.newListColor = COLORS[4];
+            state.newListIcon = ICONS[0];
+            renderColorPicker();
+            renderIconPicker();
+            document.getElementById('modal').classList.add('show');
+            setTimeout(() => document.getElementById('modal-name').focus(), 200);
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+        }
+
+        function createList() {
+            const name = document.getElementById('modal-name').value.trim();
+            if (!name) { document.getElementById('modal-name').focus(); return; }
+            state.lists.push({ id: uid(), name, color: state.newListColor, icon: state.newListIcon, reminders: [] });
+            closeModal();
+            renderSidebar();
+            syncDataToServer();
+            setView(state.lists[state.lists.length - 1].id);
+        }
+
+        function renderColorPicker() {
+            const el = document.getElementById('color-picker');
+            el.innerHTML = '';
+            COLORS.forEach(c => {
+                const s = document.createElement('div');
+                s.className = 'color-swatch' + (c === state.newListColor ? ' selected' : '');
+                s.style.background = c;
+                s.onclick = () => { state.newListColor = c; renderColorPicker(); };
+                el.appendChild(s);
+            });
+        }
+
+        function renderIconPicker() {
+            const el = document.getElementById('icon-picker');
+            el.innerHTML = '';
+            ICONS.forEach(ic => {
+                const s = document.createElement('div');
+                s.className = 'color-swatch' + (ic === state.newListIcon ? ' selected' : '');
+                s.style.background = ic === state.newListIcon ? 'rgba(0,122,255,.15)' : 'transparent';
+                s.style.borderColor = ic === state.newListIcon ? 'var(--accent)' : 'transparent';
+                s.textContent = ic;
+                s.style.display = 'flex'; s.style.alignItems = 'center'; s.style.justifyContent = 'center';
+                s.onclick = () => { state.newListIcon = ic; renderIconPicker(); };
+                el.appendChild(s);
+            });
+        }
+
+        // close modal on overlay click
+        document.getElementById('modal').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Enter key in modal name
+        document.getElementById('modal-name').addEventListener('keydown', e => {
+            if (e.key === 'Enter') createList();
+        });
+
+        // ── DARK MODE ──
+        function toggleDark() {
+            const isDark = document.body.classList.toggle('dark');
+            document.getElementById('dark-label').textContent = isDark ? 'Light' : 'Dark';
+        }
+
+        // ── SIDEBAR (MOBILE) ──
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const isOpen = sidebar.classList.contains('open');
+            if (isOpen) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+            } else {
+                sidebar.classList.add('open');
+                overlay.classList.add('show');
+            }
+        }
+
+        function closeSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        }
+
+        // ── UTILS ──
+        function uid() { return Math.random().toString(36).slice(2, 9) + Date.now().toString(36); }
+        function escHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        // ── SEED DATA ──
+        function loadSeedData() {
+            state.lists[0].reminders = [
+                { id: uid(), text: 'Buy groceries', completed: false, flagged: false, date: new Date().toISOString().split('T')[0], priority: null },
+                { id: uid(), text: 'Call the dentist', completed: false, flagged: true, date: null, priority: 'high' },
+                { id: uid(), text: 'Finish project report', completed: false, flagged: false, date: null, priority: 'med' },
+                { id: uid(), text: 'Read a book', completed: true, flagged: false, date: null, priority: null },
+            ];
+        }
+
+        // ── AUTH & API ──
+        function toggleAuthMode() {
+            authMode = authMode === 'login' ? 'signup' : 'login';
+            document.getElementById('auth-submit-btn').textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
+            document.querySelector('.auth-toggle button').textContent = authMode === 'login' ? 'Sign Up' : 'Sign In';
+            document.querySelector('.auth-toggle').innerHTML = authMode === 'login'
+                ? "Don't have an account? <button onclick=\"toggleAuthMode()\">Sign Up</button>"
+                : "Already have an account? <button onclick=\"toggleAuthMode()\">Sign In</button>";
+        }
+
+        async function handleAuthSubmit() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value.trim();
+            const errorEl = document.getElementById('auth-error');
+            const submitBtn = document.getElementById('auth-submit-btn');
+
+            errorEl.style.display = 'none';
+
+            if (!email || !password) {
+                showAuthError('Email and password required');
+                return;
+            }
+
+            if (authMode === 'signup') {
+                const pwError = getPasswordValidationError(password);
+                if (pwError) {
+                    showAuthError(pwError);
+                    return;
+                }
+            }
+
+            submitBtn.classList.add('auth-loading');
+            submitBtn.disabled = true;
+
+            try {
+                const endpoint = authMode === 'login' ? '/auth/login' : '/auth/signup';
+                const response = await fetch(API_BASE + endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showAuthError(data.error || 'Authentication failed');
+                    submitBtn.classList.remove('auth-loading');
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                authToken = data.access_token;
+                userEmail = email;
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('userEmail', userEmail);
+
+                showAuthScreen(false);
+                await loadProfile();
+                await loadRemindersFromServer();
+                renderSidebar();
+                renderMain();
+
+                submitBtn.classList.remove('auth-loading');
+                submitBtn.disabled = false;
+            } catch (err) {
+                showAuthError('Network error: ' + err.message);
+                submitBtn.classList.remove('auth-loading');
+                submitBtn.disabled = false;
+            }
+        }
+
+        function getPasswordValidationError(password) {
+            if (password.length < 8) {
+                return 'Password must be at least 8 characters.';
+            }
+            if (!/[A-Z]/.test(password)) {
+                return 'Password must include at least one uppercase letter.';
+            }
+            if (!/[0-9]/.test(password)) {
+                return 'Password must include at least one number.';
+            }
+            // Disallow repeating numeric sequences like 1111 or 6777
+            if (/(\d)\1{2,}/.test(password)) {
+                return 'Password must not contain consecutive repeated digits (e.g., 1111, 6777).';
+            }
+            // Disallow ascending consecutive numeric patterns like 1234 / 234
+            for (let i = 0; i < password.length - 2; i++) {
+                const a = parseInt(password[i], 10);
+                const b = parseInt(password[i + 1], 10);
+                const c = parseInt(password[i + 2], 10);
+                if (!Number.isNaN(a) && !Number.isNaN(b) && !Number.isNaN(c) && b === a + 1 && c === b + 1) {
+                    return 'Password must not contain sequential numbers (e.g., 1234, 234).';
+                }
+            }
+            return null;
+        }
+
+        function showAuthError(msg) {
+            const errorEl = document.getElementById('auth-error');
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+        }
+
+        function showAuthScreen(show) {
+            const screen = document.getElementById('auth-screen');
+            const app = document.querySelector('.sidebar');
+
+            if (show) {
+                screen.style.display = 'flex';
+                app.style.display = 'none';
+                document.querySelector('.main').style.display = 'none';
+                document.querySelector('.dark-toggle').style.display = 'none';
+                document.getElementById('my-profile-badge').style.display = 'none';
+            } else {
+                screen.style.display = 'none';
+                app.style.display = 'flex';
+                document.querySelector('.main').style.display = 'flex';
+                document.querySelector('.dark-toggle').style.display = 'flex';
+                document.getElementById('my-profile-badge').style.display = 'inline-flex';
+            }
+        }
+
+        async function loadProfile() {
+            if (!authToken) return;
+            try {
+                const response = await fetch(API_BASE + '/profile', {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+                if (!response.ok) {
+                    console.warn('Failed to load profile');
+                    return;
+                }
+                const data = await response.json();
+                document.getElementById('profile-email').value = data.email;
+                document.getElementById('profile-name').value = data.name || '';
+                document.getElementById('profile-dob').value = data.dob || '';
+                const dobHint = document.getElementById('profile-dob-hint');
+                if (dobHint) {
+                    dobHint.textContent = data.dob ? '' : 'No DOB set';
+                }
+            } catch (err) {
+                console.warn('Load profile error', err);
+            }
+        }
+
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            const isPassword = field.type === 'password';
+            field.type = isPassword ? 'text' : 'password';
+        }
+
+        function openProfileModal() {
+            document.getElementById('profile-modal').classList.add('show');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.remove('show');
+        }
+
+        async function saveProfile() {
+            if (!authToken) return;
+            const name = document.getElementById('profile-name').value.trim();
+            const dob = document.getElementById('profile-dob').value;
+            const password = document.getElementById('profile-password').value;
+            const passwordConfirm = document.getElementById('profile-password-confirm').value;
+
+            if (password && password !== passwordConfirm) {
+                alert('Passwords do not match.');
+                return;
+            }
+
+            if (password) {
+                const pwError = getPasswordValidationError(password);
+                if (pwError) {
+                    alert(pwError);
+                    return;
+                }
+            }
+
+            const payload = { name, dob };
+            if (password) payload.password = password;
+
+            try {
+                const response = await fetch(API_BASE + '/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    console.error('Failed to update profile', err);
+                    alert(err.error || 'Failed to update profile');
+                    return;
+                }
+                closeProfileModal();
+                await loadProfile();
+            } catch (err) {
+                console.error('Save profile error', err);
+            }
+        }
+
+        async function loadRemindersFromServer() {
+            try {
+                const response = await fetch(API_BASE + '/reminders', {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to load reminders from server');
+                    loadSeedData();
+                    return;
+                }
+
+                const reminders = await response.json();
+
+                // Clear state and rebuild
+                state.lists = [{ id: 'reminders', name: 'Reminders', color: '#007aff', icon: '📋', reminders: [] }];
+
+                // Get lists from server
+                const listsResponse = await fetch(API_BASE + '/lists', {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+
+                if (listsResponse.ok) {
+                    const lists = await listsResponse.json();
+                    state.lists = [];
+                    lists.forEach(list => {
+                        state.lists.push({
+                            id: list.id,
+                            name: list.name,
+                            color: list.color,
+                            icon: list.icon,
+                            reminders: []
+                        });
+                    });
+
+                    // Assign reminders to lists
+                    reminders.forEach(rem => {
+                        const list = state.lists.find(l => l.id === rem.list_id);
+                        if (list) {
+                            list.reminders.push({
+                                id: rem.id,
+                                text: rem.text,
+                                completed: rem.completed,
+                                flagged: rem.flagged,
+                                date: rem.date,
+                                priority: rem.priority
+                            });
+                        }
+                    });
+                } else {
+                    // No lists, use default
+                    state.lists = [{ id: 'reminders', name: 'Reminders', color: '#007aff', icon: '📋', reminders: [] }];
+                    reminders.forEach(rem => {
+                        if (rem.list_id === 'reminders') {
+                            state.lists[0].reminders.push({
+                                id: rem.id,
+                                text: rem.text,
+                                completed: rem.completed,
+                                flagged: rem.flagged,
+                                date: rem.date,
+                                priority: rem.priority
+                            });
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading reminders:', err);
+                loadSeedData();
+            }
+        }
+
+        async function syncDataToServer() {
+            if (!authToken) return;
+
+            try {
+                await fetch(API_BASE + '/reminders/sync/all', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ lists: state.lists })
+                });
+            } catch (err) {
+                console.error('Sync failed:', err);
+            }
+        }
+
+        function handleLogout() {
+            authToken = null;
+            userEmail = null;
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userEmail');
+            closeProfileModal();
+            document.getElementById('auth-email').value = '';
+            document.getElementById('auth-password').value = '';
+            document.getElementById('profile-name').value = '';
+            document.getElementById('profile-dob').value = '';
+            document.getElementById('profile-password').value = '';
+            document.getElementById('profile-password-confirm').value = '';
+            document.getElementById('profile-email').value = '';
+            document.getElementById('my-profile-badge').style.display = 'none';
+            authMode = 'login';
+            document.getElementById('auth-submit-btn').textContent = 'Sign In';
+            document.querySelector('.auth-toggle').innerHTML = "Don't have an account? <button onclick=\"toggleAuthMode()\">Sign Up</button>";
+            showAuthScreen(true);
+        }
+
+        // ── BOOT ──
+        (async () => {
+            if (authToken) {
+                showAuthScreen(false);
+                await loadProfile();
+                await loadRemindersFromServer();
+                renderColorPicker();
+                renderIconPicker();
+                setView('all');
+            } else {
+                loadSeedData();
+                renderColorPicker();
+                renderIconPicker();
+                showAuthScreen(true);
+            }
+        })();
+    </script>
+</body>
+
+</html>
